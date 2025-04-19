@@ -1,0 +1,49 @@
+                        +----------------------+
+                        |    RateLimiter       |  <<interface>>
+                        +----------------------+
+                        | + allowRequest(api): |
+                        |     RateLimitResponse|
+                        +----------------------+
+                                 ▲
+                                 |
+               +--------------------------------------+
+               |           ApiRateLimiter            |
+               +--------------------------------------+
+               | - strategyMap: Map<String,           |
+               |                 RateLimiterStrategy> |
+               +--------------------------------------+
+               | + allowRequest(api): RateLimitResponse |
+               +--------------------------------------+
+
+                        +-----------------------------+
+                        |   RateLimiterStrategy       |  <<interface>>
+                        +-----------------------------+
+                        | + allowRequest(api): boolean|
+                        +-----------------------------+
+                           ▲             ▲            ▲
+                           |             |            |
+     +---------------------------+ +-------------------------+ +-------------------------+
+     |   FixedWindowStrategy     | | SlidingWindowStrategy   | |  TokenBucketStrategy    |
+     +---------------------------+ +-------------------------+ +-------------------------+
+     | - config: Map<String,     | | - config: Map<String,   | | - config: Map<String,   |
+     |            RateLimitConfig>| |            RateLimitConfig>| |            RateLimitConfig>|
+     +---------------------------+ +-------------------------+ +-------------------------+
+     | + allowRequest(api):      | | + allowRequest(api):    | | + allowRequest(api):    |
+     |       boolean             | |       boolean           | |       boolean           |
+     +---------------------------+ +-------------------------+ +-------------------------+
+
+     +----------------------------+
+     |      RateLimitConfig       |
+     +----------------------------+
+     | - maxRequests: int         |
+     | - windowSize: int (secs)   |
+     | - refillRate: int (for TB) |
+     +----------------------------+
+
+     +------------------------------+
+     |      RateLimitResponse       |
+     +------------------------------+
+     | - allowed: boolean           |
+     | - statusCode: int            |
+     | - message: String            |
+     +------------------------------+
