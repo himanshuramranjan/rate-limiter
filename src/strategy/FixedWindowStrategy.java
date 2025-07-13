@@ -38,6 +38,7 @@ public class FixedWindowStrategy implements RateLimiterStrategy {
         }
     }
 
+    // Declaring it static prevents unnecessary memory reference to the outer class.
     private static class Window {
         private long windowStart;
         private final AtomicInteger requestCount;
