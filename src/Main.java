@@ -34,13 +34,13 @@ public class Main {
 
         for (int i = 0; i < 15; i++) {
             RateLimitResponse res = rateLimiter.allowRequest("/api/user");
-            System.out.println("Request " + (i + 1) + ": " + res.getMessage());
+            System.out.println("Request " + (i + 1) + ": " + res.message());
             Thread.sleep(1000);
         }
 
         for(int i = 0; i < 15; i++) {
             RateLimitResponse res = rateLimiter.allowRequest("/api/order");
-            System.out.println("Request " + (i + 1) + ": " + res.getMessage());
+            System.out.println("Request " + (i + 1) + ": " + res.message());
             Thread.sleep(1000);
         }
     }
