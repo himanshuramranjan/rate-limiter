@@ -8,10 +8,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TokenBucketStrategy implements RateLimiterStrategy {
 
     private final Map<String, TokenBucket> buckets = new ConcurrentHashMap<>();
-    private final Map<String, RateLimiterConfig> configMap;
+    private final Map<String, RateLimiterConfig> apiVsConfigMap;
 
-    public TokenBucketStrategy(Map<String, RateLimiterConfig> configMap) {
-        this.configMap = configMap;
+    public TokenBucketStrategy(Map<String, RateLimiterConfig> apiVsConfigMap) {
+        this.apiVsConfigMap = apiVsConfigMap;
     }
 
     private static class TokenBucket {
@@ -26,11 +26,12 @@ public class TokenBucketStrategy implements RateLimiterStrategy {
 
     @Override
     public boolean allowRequest(String api) {
-        RateLimiterConfig config = configMap.get(api);
+        RateLimiterConfig config = apiVsConfigMap.get(api);
         if (config == null) return true;
 
         buckets.putIfAbsent(api, new TokenBucket(config.maxRequest(), System.nanoTime()));
 
+        // access to 1 thread per API by locking on each Token object
         synchronized (buckets.get(api)) {
             TokenBucket bucket = buckets.get(api);
             long now = System.nanoTime();

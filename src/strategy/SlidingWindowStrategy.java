@@ -9,25 +9,26 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SlidingWindowStrategy implements RateLimiterStrategy {
     private final Map<String, Deque<Long>> requestTimestamps;
-    private final Map<String, RateLimiterConfig> configMap;
+    private final Map<String, RateLimiterConfig> apiVsConfigMap;
 
-    public SlidingWindowStrategy(Map<String, RateLimiterConfig> configMap) {
+    public SlidingWindowStrategy(Map<String, RateLimiterConfig> apiVsConfigMap) {
         this.requestTimestamps = new ConcurrentHashMap<>();
-        this.configMap = configMap;
+        this.apiVsConfigMap = apiVsConfigMap;
     }
 
     @Override
     public boolean allowRequest(String api) {
-        RateLimiterConfig config = configMap.get(api);
+        RateLimiterConfig config = apiVsConfigMap.get(api);
         if (config == null) return true;
 
         requestTimestamps.putIfAbsent(api, new ArrayDeque<>());
         Deque<Long> timestamps = requestTimestamps.get(api);
         long currentTime = System.currentTimeMillis();
 
+        // access to 1 thread per API by locking each instance of timestamps (Deque<Long>)
         synchronized (timestamps) {
             while (!timestamps.isEmpty() &&
-                    (currentTime - timestamps.peekFirst()) > config.windowSize() * 1000) {
+                    (currentTime - timestamps.peekFirst()) > config.windowSize() * 1000L) {
                 timestamps.pollFirst();
             }
 
