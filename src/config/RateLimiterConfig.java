@@ -5,8 +5,8 @@ public class RateLimiterConfig {
     private final int windowSize;
     private final int refillRate;
 
-    public RateLimiterConfig(int mazRequest, int windowSize, int refillRate) {
-        this.maxRequest = mazRequest;
+    public RateLimiterConfig(int maxRequest, int windowSize, int refillRate) {
+        this.maxRequest = maxRequest;
         this.windowSize = windowSize;
         this.refillRate = refillRate;
     }
