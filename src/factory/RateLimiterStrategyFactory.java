@@ -1,34 +1,24 @@
 package factory;
 
 import config.RateLimiterConfig;
-import model.ApiRateLimiter;
-import model.RateLimiter;
+import enums.StrategyType;
 import strategy.FixedWindowStrategy;
 import strategy.RateLimiterStrategy;
 import strategy.SlidingWindowStrategy;
 import strategy.TokenBucketStrategy;
 
-import java.util.HashMap;
 import java.util.Map;
 
-public class RateLimiterFactory {
+public class RateLimiterStrategyFactory {
 
-    private RateLimiterFactory() {}
+    private RateLimiterStrategyFactory() {}
 
-    public static RateLimiter createRateLimiter(Map<String, RateLimiterConfig> apiConfigs, String strategyType) {
-        Map<String, RateLimiterStrategy> strategyMap = new HashMap<>();
+    public static RateLimiterStrategy createRateLimiter(Map<String, RateLimiterConfig> apiConfigs, StrategyType strategyType) {
 
-        RateLimiterStrategy strategy = switch (strategyType.toLowerCase()) {
-            case "fixed" -> new FixedWindowStrategy(apiConfigs);
-            case "sliding" -> new SlidingWindowStrategy(apiConfigs);
-            case "token" -> new TokenBucketStrategy(apiConfigs);
-            default -> throw new IllegalArgumentException("Unsupported strategy: " + strategyType);
+        return switch (strategyType) {
+            case FIXED -> new FixedWindowStrategy(apiConfigs);
+            case SLIDING -> new SlidingWindowStrategy(apiConfigs);
+            case TOKEN -> new TokenBucketStrategy(apiConfigs);
         };
-
-        for (String api : apiConfigs.keySet()) {
-            strategyMap.put(api, strategy); // You can also assign different strategies per API if needed
-        }
-
-        return new ApiRateLimiter(strategyMap);
     }
 }

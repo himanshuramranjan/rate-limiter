@@ -1,15 +1,15 @@
 import config.RateLimiterConfig;
-import factory.RateLimiterFactory;
+import factory.RateLimiterStrategyFactory;
 import model.ApiRateLimiter;
 import model.RateLimitResponse;
 import model.RateLimiter;
-import strategy.FixedWindowStrategy;
 import strategy.RateLimiterStrategy;
-import strategy.SlidingWindowStrategy;
-import strategy.TokenBucketStrategy;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static enums.StrategyType.FIXED;
+import static enums.StrategyType.SLIDING;
 
 public class Main {
     public static void main(String[] args) throws InterruptedException {
@@ -23,8 +23,12 @@ public class Main {
         );
 
         Map<String, RateLimiterStrategy> strategyMap = new HashMap<>();
-        strategyMap.put("/api/user", new FixedWindowStrategy(userApiConfigs));
-        strategyMap.put("/api/order", new SlidingWindowStrategy(orderApiConfigs));
+
+        RateLimiterStrategy fixedWindowStrategy = RateLimiterStrategyFactory.createRateLimiter(userApiConfigs, FIXED);
+        RateLimiterStrategy slidingWindowStrategy = RateLimiterStrategyFactory.createRateLimiter(orderApiConfigs, SLIDING);
+
+        strategyMap.put("/api/user", fixedWindowStrategy);
+        strategyMap.put("/api/order", slidingWindowStrategy);
 
         RateLimiter rateLimiter = new ApiRateLimiter(strategyMap);
 
