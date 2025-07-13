@@ -26,14 +26,14 @@ public class FixedWindowStrategy implements RateLimiterStrategy {
 
         synchronized (windowMap.get(api)) {
             Window window = windowMap.get(api);
-            long windowEnd = window.windowStart + config.getWindowSize();
+            long windowEnd = window.windowStart + config.windowSize();
 
             if(currentTime > windowEnd) {
                 window.windowStart = currentTime;
                 window.requestCount.set(0);
             }
 
-            if(window.requestCount.incrementAndGet() <= config.getMaxRequest()) {
+            if(window.requestCount.incrementAndGet() <= config.maxRequest()) {
                 return true;
             }
 

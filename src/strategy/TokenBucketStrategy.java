@@ -29,15 +29,15 @@ public class TokenBucketStrategy implements RateLimiterStrategy {
         RateLimiterConfig config = configMap.get(api);
         if (config == null) return true;
 
-        buckets.putIfAbsent(api, new TokenBucket(config.getMaxRequest(), System.nanoTime()));
+        buckets.putIfAbsent(api, new TokenBucket(config.maxRequest(), System.nanoTime()));
 
         synchronized (buckets.get(api)) {
             TokenBucket bucket = buckets.get(api);
             long now = System.nanoTime();
             long elapsedTime = now - bucket.lastRefillTimestamp;
 
-            double refillTokens = (elapsedTime / 1e9) * config.getRefillRate();
-            bucket.tokens = Math.min(config.getMaxRequest(), bucket.tokens + refillTokens);
+            double refillTokens = (elapsedTime / 1e9) * config.refillRate();
+            bucket.tokens = Math.min(config.maxRequest(), bucket.tokens + refillTokens);
             bucket.lastRefillTimestamp = now;
 
             if (bucket.tokens >= 1) {

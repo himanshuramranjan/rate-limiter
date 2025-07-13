@@ -27,11 +27,11 @@ public class SlidingWindowStrategy implements RateLimiterStrategy {
 
         synchronized (timestamps) {
             while (!timestamps.isEmpty() &&
-                    (currentTime - timestamps.peekFirst()) > config.getWindowSize() * 1000) {
+                    (currentTime - timestamps.peekFirst()) > config.windowSize() * 1000) {
                 timestamps.pollFirst();
             }
 
-            if (timestamps.size() < config.getMaxRequest()) {
+            if (timestamps.size() < config.maxRequest()) {
                 timestamps.addLast(currentTime);
                 return true;
             }
