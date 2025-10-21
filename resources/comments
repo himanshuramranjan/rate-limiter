@@ -1,0 +1,25 @@
+> Marking of Window class as static in FixedWindowStrategy
+
+1. Memory Efficiency
+
+When an inner class is non-static, it holds an implicit reference to its enclosing class instance
+This creates a hidden memory overhead as each Window object would maintain a reference to its FixedWindowStrategy instance
+By making it static, we eliminate this unnecessary reference
+
+2. Prevents Memory Leaks
+
+Without static, even if you want to garbage collect a Window instance, it can't be collected until its outer FixedWindowStrategy instance is also eligible for garbage collection
+This could lead to memory leaks, especially in a rate limiter that creates many window instances over time
+
+> Also, marking the Window class as static doesn't affect the isolation between different window instances. Each Window object gets its own copy of the instance variables and thus value wont be affected.
+
+// Each API gets its own Window instance with isolated counters
+Map<String, Window> apiVsWindowMap = new ConcurrentHashMap<>();
+
+// API-1 gets its own Window
+apiVsWindowMap.put("api1", new Window(currentTime)); // Has its own requestCount
+// API-2 gets a different Window
+apiVsWindowMap.put("api2", new Window(currentTime)); // Has its own requestCount
+
+
+> Further, strategy classes can be made Singlerton 
