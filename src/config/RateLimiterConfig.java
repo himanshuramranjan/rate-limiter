@@ -1,4 +1,4 @@
 package config;
 
-public record RateLimiterConfig(int maxRequest, int windowSize, int refillRate) {
+public record RateLimiterConfig(Integer maxRequest, Integer windowSize, Integer refillRate) {
 }

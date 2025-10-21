@@ -15,11 +15,12 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
 
         Map<String, RateLimiterConfig> userApiConfigs = Map.of(
-                "/api/user", new RateLimiterConfig(5, 10, 2)
+                "/api/user/login", new RateLimiterConfig(5, 10, null),
+                "/api/user/logout", new RateLimiterConfig(50, 10, null)
         );
 
         Map<String, RateLimiterConfig> orderApiConfigs = Map.of(
-                "/api/order", new RateLimiterConfig(3, 5, 1)
+                "/api/order", new RateLimiterConfig(3, 5, null)
         );
 
         Map<String, RateLimiterStrategy> strategyMap = new HashMap<>();
@@ -27,13 +28,14 @@ public class Main {
         RateLimiterStrategy fixedWindowStrategy = RateLimiterStrategyFactory.createRateLimiter(userApiConfigs, FIXED);
         RateLimiterStrategy slidingWindowStrategy = RateLimiterStrategyFactory.createRateLimiter(orderApiConfigs, SLIDING);
 
-        strategyMap.put("/api/user", fixedWindowStrategy);
+        strategyMap.put("/api/user/login", fixedWindowStrategy);
+        strategyMap.put("/api/user/logout", fixedWindowStrategy);
         strategyMap.put("/api/order", slidingWindowStrategy);
 
-        RateLimiter rateLimiter = new ApiRateLimiter(strategyMap);
+        RateLimiter rateLimiter = ApiRateLimiter.getInstance(strategyMap);
 
         for (int i = 0; i < 15; i++) {
-            RateLimitResponse res = rateLimiter.allowRequest("/api/user");
+            RateLimitResponse res = rateLimiter.allowRequest("/api/user/login");
             System.out.println("Request " + (i + 1) + ": " + res.message());
             Thread.sleep(1000);
         }
