@@ -2,6 +2,7 @@ package strategy;
 
 import config.RateLimiterConfig;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -11,9 +12,26 @@ public class FixedWindowStrategy implements RateLimiterStrategy {
     private final Map<String, Window> apiVsWindowMap;
     private final Map<String, RateLimiterConfig> apiVsConfigMap;
 
-    public FixedWindowStrategy(Map<String, RateLimiterConfig> apiVsConfigMap) {
-        this.apiVsWindowMap = new ConcurrentHashMap<>();
-        this.apiVsConfigMap = apiVsConfigMap;
+    private FixedWindowStrategy() {
+        apiVsConfigMap = new HashMap<>();
+        apiVsWindowMap = new HashMap<>();
+    }
+
+    private static class Holder {
+        private static final FixedWindowStrategy INSTANCE = new FixedWindowStrategy();
+    }
+
+    public static FixedWindowStrategy getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    public void registerApi(String api, RateLimiterConfig config) {
+        apiVsConfigMap.put(api, config);
+    }
+
+    public void removeApi(String api) {
+        apiVsConfigMap.remove(api);
+        apiVsWindowMap.remove(api);
     }
 
     @Override

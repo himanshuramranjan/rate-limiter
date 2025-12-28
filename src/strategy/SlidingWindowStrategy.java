@@ -4,6 +4,7 @@ import config.RateLimiterConfig;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,9 +12,25 @@ public class SlidingWindowStrategy implements RateLimiterStrategy {
     private final Map<String, Deque<Long>> requestTimestamps;
     private final Map<String, RateLimiterConfig> apiVsConfigMap;
 
-    public SlidingWindowStrategy(Map<String, RateLimiterConfig> apiVsConfigMap) {
-        this.requestTimestamps = new ConcurrentHashMap<>();
-        this.apiVsConfigMap = apiVsConfigMap;
+    private SlidingWindowStrategy() {
+        apiVsConfigMap = new HashMap<>();
+        requestTimestamps = new ConcurrentHashMap<>();
+    }
+
+    private static class Holder {
+        private static final SlidingWindowStrategy INSTANCE = new SlidingWindowStrategy();
+    }
+
+    public static SlidingWindowStrategy getInstance() {
+        return SlidingWindowStrategy.Holder.INSTANCE;
+    }
+
+    public void registerApi(String api, RateLimiterConfig config) {
+        apiVsConfigMap.put(api, config);
+    }
+
+    public void removeApi(String api) {
+        apiVsConfigMap.remove(api);
     }
 
     @Override

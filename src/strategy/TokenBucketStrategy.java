@@ -2,16 +2,34 @@ package strategy;
 
 import config.RateLimiterConfig;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TokenBucketStrategy implements RateLimiterStrategy {
 
-    private final Map<String, TokenBucket> buckets = new ConcurrentHashMap<>();
+    private final Map<String, TokenBucket> buckets;
     private final Map<String, RateLimiterConfig> apiVsConfigMap;
 
-    public TokenBucketStrategy(Map<String, RateLimiterConfig> apiVsConfigMap) {
-        this.apiVsConfigMap = apiVsConfigMap;
+    public TokenBucketStrategy() {
+        this.apiVsConfigMap = new HashMap<>();
+        buckets = new ConcurrentHashMap<>();
+    }
+
+    private static class Holder {
+        private static final TokenBucketStrategy INSTANCE = new TokenBucketStrategy();
+    }
+
+    public static TokenBucketStrategy getInstance() {
+        return TokenBucketStrategy.Holder.INSTANCE;
+    }
+
+    public void registerApi(String api, RateLimiterConfig config) {
+        apiVsConfigMap.put(api, config);
+    }
+
+    public void removeApi(String api) {
+        apiVsConfigMap.remove(api);
     }
 
     private static class TokenBucket {
