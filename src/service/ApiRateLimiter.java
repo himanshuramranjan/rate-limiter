@@ -1,36 +1,40 @@
-package model;
+package service;
 
+import config.RateLimiterConfig;
+import enums.StrategyType;
+import factory.RateLimiterStrategyFactory;
+import model.RateLimitResponse;
 import strategy.RateLimiterStrategy;
 
+import java.util.HashMap;
 import java.util.Map;
 
-public class ApiRateLimiter implements RateLimiter {
+public class ApiRateLimiter {
 
-    private final Map<String, RateLimiterStrategy> strategyMap;
+    private final Map<String, RateLimiterStrategy> apiVsStrategyMap;
 
-    private ApiRateLimiter(Map<String, RateLimiterStrategy> strategyMap) {
-        this.strategyMap = strategyMap;
+    private ApiRateLimiter() {
+        this.apiVsStrategyMap = new HashMap<>();
     }
 
-    private static class ApiRateLimiterHolder {
-
-        private static ApiRateLimiter INSTANCE;
-
-        private static void initialize(Map<String, RateLimiterStrategy> strategyMap) {
-            if (INSTANCE == null) {
-                INSTANCE = new ApiRateLimiter(strategyMap);
-            }
-        }
+    private static class Holder {
+        private static final ApiRateLimiter INSTANCE = new ApiRateLimiter();
     }
 
-    public static ApiRateLimiter getInstance(Map<String, RateLimiterStrategy> strategyMap) {
-        ApiRateLimiterHolder.initialize(strategyMap);
-        return ApiRateLimiterHolder.INSTANCE;
+    public static ApiRateLimiter getInstance() {
+        return Holder.INSTANCE;
     }
 
-    @Override
+    public void registerApi(String api, RateLimiterConfig config, StrategyType strategyType) {
+
+        RateLimiterStrategy strategy = RateLimiterStrategyFactory.getStrategy(strategyType);
+
+        strategy.registerApi(api, config);
+        apiVsStrategyMap.put(api, strategy);
+    }
+
     public RateLimitResponse allowRequest(String api) {
-        RateLimiterStrategy strategy = strategyMap.get(api);
+        RateLimiterStrategy strategy = apiVsStrategyMap.get(api);
 
         if(strategy == null) {
             return new RateLimitResponse(true, 200, "No strategy defined, allowing the request " + api);
