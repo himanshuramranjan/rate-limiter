@@ -1,69 +1,53 @@
 package strategy;
 
-import config.RateLimiterConfig;
-
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TokenBucketStrategy implements RateLimiterStrategy {
 
-    private final Map<String, TokenBucket> buckets;
-    private final Map<String, RateLimiterConfig> apiVsConfigMap;
+    private final long capacity;
+    private final long refillRatePerSecond;
 
-    public TokenBucketStrategy() {
-        this.apiVsConfigMap = new HashMap<>();
-        buckets = new ConcurrentHashMap<>();
-    }
+    private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
 
-    private static class Holder {
-        private static final TokenBucketStrategy INSTANCE = new TokenBucketStrategy();
-    }
-
-    public static TokenBucketStrategy getInstance() {
-        return TokenBucketStrategy.Holder.INSTANCE;
-    }
-
-    public void registerApi(String api, RateLimiterConfig config) {
-        apiVsConfigMap.put(api, config);
-    }
-
-    public void removeApi(String api) {
-        apiVsConfigMap.remove(api);
-    }
-
-    private static class TokenBucket {
-        private double tokens;
-        private long lastRefillTimestamp;
-
-        public TokenBucket(double tokens, long lastRefillTimestamp) {
-            this.tokens = tokens;
-            this.lastRefillTimestamp = lastRefillTimestamp;
-        }
+    public TokenBucketStrategy(long capacity, long refillRatePerSecond) {
+        this.capacity = capacity;
+        this.refillRatePerSecond = refillRatePerSecond;
     }
 
     @Override
-    public boolean allowRequest(String api) {
-        RateLimiterConfig config = apiVsConfigMap.get(api);
-        if (config == null) return true;
+    public boolean allowRequest(String key) {
+        buckets.putIfAbsent(key, new Bucket(capacity, System.nanoTime()));
+        Bucket bucket = buckets.get(key);
 
-        buckets.putIfAbsent(api, new TokenBucket(config.maxRequest(), System.nanoTime()));
+        synchronized (bucket) {
+            refill(bucket);
 
-        // access to 1 thread per API by locking on each Token object
-        synchronized (buckets.get(api)) {
-            TokenBucket bucket = buckets.get(api);
-            long now = System.nanoTime();
-            long elapsedTime = now - bucket.lastRefillTimestamp;
-
-            double refillTokens = (elapsedTime / 1e9) * config.refillRate();
-            bucket.tokens = Math.min(config.maxRequest(), bucket.tokens + refillTokens);
-            bucket.lastRefillTimestamp = now;
-
-            if (bucket.tokens >= 1) {
-                bucket.tokens -= 1;
+            if (bucket.tokens > 0) {
+                bucket.tokens--;
                 return true;
             }
             return false;
+        }
+    }
+
+    private void refill(Bucket bucket) {
+        long now = System.nanoTime();
+        long elapsedSeconds = (now - bucket.lastRefillTime) / 1_000_000_000;
+
+        if (elapsedSeconds > 0) {
+            long tokensToAdd = elapsedSeconds * refillRatePerSecond;
+            bucket.tokens = Math.min(capacity, bucket.tokens + tokensToAdd);
+            bucket.lastRefillTime = now;
+        }
+    }
+
+    private static class Bucket {
+        long tokens;
+        long lastRefillTime;
+
+        Bucket(long tokens, long lastRefillTime) {
+            this.tokens = tokens;
+            this.lastRefillTime = lastRefillTime;
         }
     }
 }

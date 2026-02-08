@@ -1,46 +1,19 @@
 package service;
 
-import config.RateLimiterConfig;
-import enums.StrategyType;
-import factory.RateLimiterStrategyFactory;
 import model.RateLimitResponse;
 import strategy.RateLimiterStrategy;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class ApiRateLimiter {
 
-    private final Map<String, RateLimiterStrategy> apiVsStrategyMap;
+    private final RateLimiterStrategy strategy;
 
-    private ApiRateLimiter() {
-        this.apiVsStrategyMap = new HashMap<>();
+    public ApiRateLimiter(RateLimiterStrategy strategy) {
+        this.strategy = strategy;
     }
 
-    private static class Holder {
-        private static final ApiRateLimiter INSTANCE = new ApiRateLimiter();
-    }
+    public RateLimitResponse allow(String userId) {
 
-    public static ApiRateLimiter getInstance() {
-        return Holder.INSTANCE;
-    }
-
-    public void registerApi(String api, RateLimiterConfig config, StrategyType strategyType) {
-
-        RateLimiterStrategy strategy = RateLimiterStrategyFactory.getStrategy(strategyType);
-
-        strategy.registerApi(api, config);
-        apiVsStrategyMap.put(api, strategy);
-    }
-
-    public RateLimitResponse allowRequest(String api) {
-        RateLimiterStrategy strategy = apiVsStrategyMap.get(api);
-
-        if(strategy == null) {
-            return new RateLimitResponse(true, 200, "No strategy defined, allowing the request " + api);
-        }
-
-        boolean isRequestAllowed = strategy.allowRequest(api);
+        boolean isRequestAllowed = strategy.allowRequest(userId);
 
         if(isRequestAllowed) {
             return new RateLimitResponse(true, 200, "Request allowed");
