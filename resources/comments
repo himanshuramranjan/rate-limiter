@@ -1,3 +1,9 @@
+> In modern Java, synchronized is highly optimized and should be the default choice for
+most concurrency needs. ReentrantLock is only justified when advanced features like tryLock,
+fairness, or timed waits are required. For typical rate limiters and in-memory state,
+synchronized is simpler, safer, and performant.
+
+
 > Marking of Window class as static in FixedWindowStrategy
 
 1. Memory Efficiency
@@ -22,4 +28,22 @@ apiVsWindowMap.put("api1", new Window(currentTime)); // Has its own requestCount
 apiVsWindowMap.put("api2", new Window(currentTime)); // Has its own requestCount
 
 
-> Further, strategy classes can be made Singlerton 
+> Diff strategies :
+
+Fixed Window Rate Limiter
+
+Divides time into fixed intervals (e.g., 1 minute) and allows a given maximum number of requests per window.
+Simple and efficient but can allow traffic spikes at window boundaries.
+Best suited for basic limits where precision is not critical.
+
+Sliding Window Rate Limiter
+
+Tracks request timestamps over a rolling time window to smooth traffic evenly.
+Prevents burst spikes seen in fixed windows but requires more memory and computation.
+Ideal when fairness and smooth request distribution are important.
+
+Token Bucket Rate Limiter
+
+Tokens are added to a bucket at a fixed rate, and each request consumes a token.
+Allows short bursts while enforcing a long-term average rate.
+Commonly used in APIs and network systems for flexible and efficient rate limiting.

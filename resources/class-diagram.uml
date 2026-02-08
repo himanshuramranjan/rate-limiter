@@ -1,64 +1,27 @@
-                        +----------------------+
-                        |    RateLimiter       |  <<interface>>
-                        +----------------------+
-                        | + allowRequest(api): |
-                        |     RateLimitResponse|
-                        +----------------------+
-                                 ▲
-                                 |
-               +--------------------------------------+
-               |           ApiRateLimiter            |   <<Singleton>>
-               +--------------------------------------+
-               | - apiVsStrategyMap: Map<String,     |
-               |        RateLimiterStrategy>         |
-               +--------------------------------------+
-               | + registerApi(api, config, strategy)|
-               | + allowRequest(api): RateLimitResponse|
-               +--------------------------------------+
-
-                                 |
-                                 | uses
-                                 ▼
-               +--------------------------------------+
-               |    RateLimiterStrategyFactory        |
-               +--------------------------------------+
-               | + getStrategy(type):                 |
-               |     RateLimiterStrategy              |
-               +--------------------------------------+
-
-                        +-----------------------------+
-                        |   RateLimiterStrategy       |  <<interface>>
-                        +-----------------------------+
-                        | + registerApi(api, config): |
-                        |       void                  |
-                        | + allowRequest(api):        |
-                        |       boolean               |
-                        +-----------------------------+
-                           ▲             ▲            ▲
-                           |             |            |
-     +---------------------------+ +-------------------------+ +-------------------------+
-     |   FixedWindowStrategy     | | SlidingWindowStrategy   | |  TokenBucketStrategy    |
-     |        <<Singleton>>      | |       <<Singleton>>     | |      <<Singleton>>      |
-     +---------------------------+ +-------------------------+ +-------------------------+
-     | - apiVsWindowMap          | | - apiVsWindowMap        | | - apiVsBucketMap        |
-     | - apiVsConfigMap          | | - apiVsConfigMap        | | - apiVsConfigMap        |
-     +---------------------------+ +-------------------------+ +-------------------------+
-     | + registerApi(api, config)| | + registerApi(api, config)| | + registerApi(api, config)|
-     | + allowRequest(api):bool  | | + allowRequest(api):bool | | + allowRequest(api):bool |
-     +---------------------------+ +-------------------------+ +-------------------------+
-
-     +----------------------------+
-     |      RateLimitConfig       |
-     +----------------------------+
-     | - maxRequests: int         |
-     | - windowSize: int (secs)   |
-     | - refillRate: int (for TB) |
-     +----------------------------+
-
-     +------------------------------+
-     |      RateLimitResponse       |
-     +------------------------------+
-     | - allowed: boolean           |
-     | - statusCode: int            |
-     | - message: String            |
-     +------------------------------+
+                   +----------------------+
+                   |      ApiRateLimiter  |
+                   +----------------------+
+                   | - strategy:          |
+                   |   RateLimitStrategy |
+                   +----------------------+
+                   | + allow(key): boolean|
+                   +----------------------+
+                              |
+                              | uses
+                              ▼
+             +--------------------------------+
+             |     RateLimitStrategy          |   <<interface>>
+             +--------------------------------+
+             | + allowRequest(key): boolean   |
+             +--------------------------------+
+                    ▲            ▲             ▲
+                    |            |             |
+   +-------------------------+ +-------------------------+ +-------------------------+
+   |  FixedWindowStrategy    | | SlidingWindowStrategy   | |  TokenBucketStrategy    |
+   +-------------------------+ +-------------------------+ +-------------------------+
+   | - windows: Map          | | - timestamps: Map       | | - buckets: Map          |
+   | - limit                 | | - limit                 | | - capacity              |
+   | - windowSizeMillis      | | - windowSizeMillis      | | - refillRatePerSecond   |
+   +-------------------------+ +-------------------------+ +-------------------------+
+   | + allowRequest(key)     | | + allowRequest(key)     | | + allowRequest(key)     |
+   +-------------------------+ +-------------------------+ +-------------------------+
