@@ -5,13 +5,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TokenBucketStrategy implements RateLimiterStrategy {
 
     private final long capacity;
-    private final long refillRatePerSecond;
+    private final long refillRatePerMinute;
 
     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
 
-    public TokenBucketStrategy(long capacity, long refillRatePerSecond) {
+    public TokenBucketStrategy(long capacity, long refillRatePerMinute) {
         this.capacity = capacity;
-        this.refillRatePerSecond = refillRatePerSecond;
+        this.refillRatePerMinute = refillRatePerMinute;
     }
 
     @Override
@@ -34,8 +34,8 @@ public class TokenBucketStrategy implements RateLimiterStrategy {
         long now = System.nanoTime();
         long elapsedSeconds = (now - bucket.lastRefillTime) / 1_000_000_000;
 
-        if (elapsedSeconds > 0) {
-            long tokensToAdd = elapsedSeconds * refillRatePerSecond;
+        if (elapsedSeconds >= 60) {
+            long tokensToAdd = (elapsedSeconds / 60) * refillRatePerMinute;
             bucket.tokens = Math.min(capacity, bucket.tokens + tokensToAdd);
             bucket.lastRefillTime = now;
         }
